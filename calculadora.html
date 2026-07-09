@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora Interactiva - Método de Rigidez para Cerchas Planas</title>
+<style>
+  :root{
+    --navy:#1F3864;
+    --wine:#7B1E3A;
+    --navy-light:#2c4d85;
+    --wine-light:#9b2c4c;
+    --bg:#f4f5f7;
+    --panel:#ffffff;
+    --text:#1a1a1a;
+    --muted:#5a5a5a;
+    --border:#d6d9e0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Segoe UI",Arial,Helvetica,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.4;
+  }
+  header{
+    background:linear-gradient(135deg,var(--navy) 0%,var(--wine) 100%);
+    color:#fff;
+    padding:24px 20px;
+    text-align:center;
+  }
+  header h1{
+    margin:0 0 6px 0;
+    font-size:1.5rem;
+  }
+  header p{
+    margin:2px 0;
+    font-size:0.9rem;
+    opacity:0.95;
+  }
+  .doi-badge{
+    display:inline-block;
+    margin-top:10px;
+    background:rgba(255,255,255,0.15);
+    border:1px solid rgba(255,255,255,0.5);
+    border-radius:20px;
+    padding:5px 14px;
+    font-size:0.8rem;
+  }
+  main{
+    max-width:1200px;
+    margin:0 auto;
+    padding:20px;
+  }
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:18px;
+    margin-bottom:20px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  }
+  .panel h2{
+    margin-top:0;
+    color:var(--navy);
+    font-size:1.15rem;
+    border-bottom:2px solid var(--wine);
+    padding-bottom:8px;
+  }
+  .row-flex{
+    display:flex;
+    gap:20px;
+    flex-wrap:wrap;
+  }
+  .col{
+    flex:1 1 420px;
+    min-width:320px;
+  }
+  table{
+    border-collapse:collapse;
+    width:100%;
+    font-size:0.85rem;
+  }
+  th,td{
+    border:1px solid var(--border);
+    padding:4px 6px;
+    text-align:center;
+  }
+  th{
+    background:var(--navy);
+    color:#fff;
+    font-weight:600;
+  }
+  tr:nth-child(even) td{ background:#f8f9fb; }
+  input[type="number"]{
+    width:72px;
+    padding:3px;
+    border:1px solid var(--border);
+    border-radius:4px;
+    font-size:0.85rem;
+    text-align:right;
+  }
+  input[type="checkbox"]{
+    transform:scale(1.2);
+  }
+  button{
+    background:var(--navy);
+    color:#fff;
+    border:none;
+    padding:8px 14px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:0.85rem;
+    margin:4px 6px 4px 0;
+    transition:background 0.15s;
+  }
+  button:hover{ background:var(--navy-light); }
+  button.wine{ background:var(--wine); }
+  button.wine:hover{ background:var(--wine-light); }
+  button.remove{
+    background:var(--wine);
+    padding:2px 8px;
+    font-size:0.75rem;
+  }
+  .toolbar{
+    margin-bottom:12px;
+  }
+  .E-global{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:12px;
+    font-size:0.9rem;
+  }
+  .E-global input{ width:140px; }
+  .badge-tension{ color:var(--wine); font-weight:600; }
+  .badge-comp{ color:var(--navy); font-weight:600; }
+  svg{
+    width:100%;
+    height:420px;
+    background:#fbfbfd;
+    border:1px solid var(--border);
+    border-radius:8px;
+  }
+  .legend{
+    font-size:0.8rem;
+    color:var(--muted);
+    margin-top:6px;
+  }
+  .legend span{ display:inline-flex; align-items:center; margin-right:16px; }
+  .legend .swatch{ width:14px; height:4px; display:inline-block; margin-right:5px; }
+  footer{
+    text-align:center;
+    padding:24px 16px 40px;
+    font-size:0.82rem;
+    color:var(--muted);
+  }
+  footer a{ color:var(--wine); }
+  .warn{
+    background:#fff3cd;
+    border:1px solid #e0c36a;
+    color:#6b5417;
+    padding:8px 12px;
+    border-radius:6px;
+    margin-top:10px;
+    font-size:0.85rem;
+    display:none;
+  }
+  .scroll-x{ overflow-x:auto; }
+  .note{
+    font-size:0.78rem;
+    color:var(--muted);
+    margin-top:6px;
+  }
+  .tag{
+    display:inline-block;
+    background:var(--wine);
+    color:#fff;
+    font-size:0.7rem;
+    padding:2px 8px;
+    border-radius:10px;
+    margin-left:8px;
+    vertical-align:middle;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Calculadora Interactiva del Método de Rigidez para Cerchas Planas</h1>
+  <p>Análisis matricial general de cerchas planas (2D) &mdash; Vanilla HTML / CSS / JavaScript, sin frameworks ni dependencias</p>
+  <p>Autor: <strong>Anuar González A.</strong></p>
+  <div class="doi-badge">DOI: 10.5281/zenodo.20042212</div>
+</header>
+
+<main>
+
+  <div class="panel">
+    <h2>1. Nodos (coordenadas, apoyos y cargas)</h2>
+    <div class="note">Unidades: coordenadas en metros (m), cargas en kilonewtons (kN). Marque "Restr. X" / "Restr. Y" para representar un apoyo restringido en esa dirección (empotrado = ambas casillas; rodillo vertical = solo Restr. Y, etc.).</div>
+    <div class="toolbar">
+      <button id="btnAddNode">+ Agregar nodo</button>
+    </div>
+    <div class="scroll-x">
+      <table id="tblNodes">
+        <thead>
+          <tr>
+            <th>Nodo</th><th>X (m)</th><th>Y (m)</th>
+            <th>Restr. X</th><th>Restr. Y</th>
+            <th>Fx (kN)</th><th>Fy (kN)</th><th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>2. Barras (conectividad, módulo de elasticidad y área)</h2>
+    <div class="note">Unidades: módulo de elasticidad E en kilopascales (kPa = kN/m²), área A en metros cuadrados (m²). El ejemplo precargado usa un único E para todas las barras y dos áreas distintas (A1 y A2), tal como en la fuente original.</div>
+    <div class="toolbar">
+      <button id="btnAddMember">+ Agregar barra</button>
+    </div>
+    <div class="scroll-x">
+      <table id="tblMembers">
+        <thead>
+          <tr>
+            <th>Barra</th><th>Nodo i</th><th>Nodo j</th>
+            <th>E (kPa)</th><th>A (m²)</th><th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>3. Cálculo</h2>
+    <button class="wine" id="btnCalc">Calcular</button>
+    <button id="btnReset">Restaurar ejemplo (cercha de 21 barras, fuente original)</button>
+    <div class="warn" id="warnBox"></div>
+  </div>
+
+  <div class="panel">
+    <h2>4. Esquema de la estructura</h2>
+    <svg id="svgTruss" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="legend">
+      <span><span class="swatch" style="background:var(--wine)"></span>Tensión</span>
+      <span><span class="swatch" style="background:var(--navy)"></span>Compresión</span>
+      <span>▲ Apoyo restringido</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>5. Resultados</h2>
+
+    <div class="row-flex">
+      <div class="col">
+        <h3 style="color:var(--navy)">Desplazamientos nodales</h3>
+        <div class="scroll-x">
+          <table id="tblDisp">
+            <thead><tr><th>Nodo</th><th>Ux (m)</th><th>Uy (m)</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="col">
+        <h3 style="color:var(--navy)">Reacciones en apoyos</h3>
+        <div class="scroll-x">
+          <table id="tblReac">
+            <thead><tr><th>Nodo</th><th>Dirección</th><th>Reacción (kN)</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="color:var(--navy)">Fuerzas axiales en barras</h3>
+    <div class="note">Convención: N &gt; 0 tensión, N &lt; 0 compresión (según elongación local del elemento).</div>
+    <div class="scroll-x">
+      <table id="tblForces">
+        <thead><tr><th>Barra</th><th>Nodo i</th><th>Nodo j</th><th>L (m)</th><th>N (kN)</th><th>Estado</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <p>
+    Método de rigidez matricial implementado en JavaScript vanilla, sin dependencias externas.<br>
+    Cita de esta calculadora: González, A. <em>Calculadora Interactiva del Método de Rigidez para Cerchas Planas</em>.
+    DOI: <strong>10.5281/zenodo.20042212</strong>. Autor: <strong>Anuar González A.</strong>
+  </p>
+  <p>
+    Ejemplo precargado extraído íntegramente del notebook original
+    <em>Stiffness_method_plane_truss_v1_0_0.ipynb</em>, repositorio
+    <a href="https://github.com/anuar-science/stiffness-method-plane-truss-jupyter" target="_blank" rel="noopener">stiffness-method-plane-truss-jupyter</a>
+    (ver README.md de este repositorio para la cita completa de la fuente, DOI 10.5281/zenodo.20042213).
+  </p>
+</footer>
+
+<script>
+(function(){
+
+  // ---------------------------------------------------------------------
+  // Datos de ejemplo EXACTOS extraídos de Stiffness_method_plane_truss_v1_0_0.ipynb
+  // (repositorio stiffness-method-plane-truss-jupyter, sin modificar ni completar valores)
+  // ---------------------------------------------------------------------
+  const E_EXAMPLE = 200000000;   // kPa
+  const A1 = 0.0005;             // m2
+  const A2 = 0.001;              // m2
+
+  const EXAMPLE_NODES = [
+    // x, y, restrX, restrY, Fx, Fy
+    {x:0,  y:0, rx:true,  ry:true,  fx:0,  fy:0},
+    {x:3,  y:0, rx:false, ry:false, fx:0,  fy:-10},
+    {x:6,  y:0, rx:false, ry:false, fx:0,  fy:-15},
+    {x:9,  y:0, rx:false, ry:false, fx:0,  fy:-20},
+    {x:12, y:0, rx:false, ry:false, fx:0,  fy:-15},
+    {x:15, y:0, rx:false, ry:false, fx:0,  fy:-10},
+    {x:18, y:0, rx:false, ry:true,  fx:10, fy:0},
+    {x:3,  y:3, rx:false, ry:false, fx:0,  fy:0},
+    {x:6,  y:3, rx:false, ry:false, fx:0,  fy:0},
+    {x:9,  y:3, rx:false, ry:false, fx:0,  fy:0},
+    {x:12, y:3, rx:false, ry:false, fx:0,  fy:0},
+    {x:15, y:3, rx:false, ry:false, fx:0,  fy:0}
+  ];
+
+  // Barras: nodo i, nodo j (1-indexado como en el notebook), E, A
+  const EXAMPLE_MEMBERS = [
+    [1,2,A1],[2,3,A1],[3,4,A1],[4,5,A1],[5,6,A1],[6,7,A1],
+    [8,9,A2],[9,10,A2],[10,11,A2],[11,12,A2],
+    [1,8,A1],[2,8,A1],[2,9,A1],[3,9,A1],[3,10,A1],[4,10,A1],
+    [5,10,A1],[5,11,A1],[6,11,A1],[6,12,A1],[7,12,A1]
+  ].map(([i,j,a]) => ({ i, j, E:E_EXAMPLE, A:a }));
+
+  // ---------------------------------------------------------------------
+  // Estado de la aplicación
+  // ---------------------------------------------------------------------
+  let nodes = [];
+  let members = [];
+
+  function cloneExample(){
+    nodes = EXAMPLE_NODES.map(n => ({...n}));
+    members = EXAMPLE_MEMBERS.map(m => ({...m}));
+  }
+
+  // ---------------------------------------------------------------------
+  // Render de tablas de entrada
+  // ---------------------------------------------------------------------
+  function renderNodesTable(){
+    const tbody = document.querySelector('#tblNodes tbody');
+    tbody.innerHTML = '';
+    nodes.forEach((n, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${idx+1}</td>
+        <td><input type="number" step="any" data-field="x" data-idx="${idx}" value="${n.x}"></td>
+        <td><input type="number" step="any" data-field="y" data-idx="${idx}" value="${n.y}"></td>
+        <td><input type="checkbox" data-field="rx" data-idx="${idx}" ${n.rx?'checked':''}></td>
+        <td><input type="checkbox" data-field="ry" data-idx="${idx}" ${n.ry?'checked':''}></td>
+        <td><input type="number" step="any" data-field="fx" data-idx="${idx}" value="${n.fx}"></td>
+        <td><input type="number" step="any" data-field="fy" data-idx="${idx}" value="${n.fy}"></td>
+        <td><button class="remove" data-remove-node="${idx}">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderMembersTable(){
+    const tbody = document.querySelector('#tblMembers tbody');
+    tbody.innerHTML = '';
+    members.forEach((m, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${idx+1}</td>
+        <td><input type="number" step="1" min="1" max="${nodes.length}" data-field="i" data-idx="${idx}" value="${m.i}"></td>
+        <td><input type="number" step="1" min="1" max="${nodes.length}" data-field="j" data-idx="${idx}" value="${m.j}"></td>
+        <td><input type="number" step="any" data-field="E" data-idx="${idx}" value="${m.E}"></td>
+        <td><input type="number" step="any" data-field="A" data-idx="${idx}" value="${m.A}"></td>
+        <td><button class="remove" data-remove-member="${idx}">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function readNodesFromDOM(){
+    document.querySelectorAll('#tblNodes input').forEach(inp => {
+      const idx = +inp.dataset.idx;
+      const field = inp.dataset.field;
+      if (inp.type === 'checkbox'){
+        nodes[idx][field] = inp.checked;
+      } else {
+        const v = parseFloat(inp.value);
+        nodes[idx][field] = isNaN(v) ? 0 : v;
+      }
+    });
+  }
+
+  function readMembersFromDOM(){
+    document.querySelectorAll('#tblMembers input').forEach(inp => {
+      const idx = +inp.dataset.idx;
+      const field = inp.dataset.field;
+      const v = parseFloat(inp.value);
+      members[idx][field] = isNaN(v) ? 0 : v;
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Álgebra lineal mínima: eliminación gaussiana con pivoteo parcial
+  // ---------------------------------------------------------------------
+  function solveLinearSystem(A, b){
+    const n = b.length;
+    const M = A.map((row,r) => row.slice().concat([b[r]]));
+    for (let col = 0; col < n; col++){
+      let pivot = col;
+      let maxAbs = Math.abs(M[col][col]);
+      for (let r = col+1; r < n; r++){
+        if (Math.abs(M[r][col]) > maxAbs){ maxAbs = Math.abs(M[r][col]); pivot = r; }
+      }
+      if (maxAbs < 1e-9){
+        throw new Error('Sistema singular: la estructura es un mecanismo o está mal restringida (matriz de rigidez no invertible).');
+      }
+      if (pivot !== col){
+        const tmp = M[col]; M[col] = M[pivot]; M[pivot] = tmp;
+      }
+      const pv = M[col][col];
+      for (let k = col; k <= n; k++) M[col][k] /= pv;
+      for (let r = 0; r < n; r++){
+        if (r === col) continue;
+        const factor = M[r][col];
+        if (factor === 0) continue;
+        for (let k = col; k <= n; k++) M[r][k] -= factor * M[col][k];
+      }
+    }
+    return M.map(row => row[n]);
+  }
+
+  // ---------------------------------------------------------------------
+  // Método de rigidez para cercha plana (general)
+  // ---------------------------------------------------------------------
+  function solveTruss(nodes, members){
+    const nNodes = nodes.length;
+    const nDOF = 2 * nNodes;
+    const K = Array.from({length:nDOF}, () => new Array(nDOF).fill(0));
+    const F = new Array(nDOF).fill(0);
+
+    nodes.forEach((n, idx) => {
+      F[2*idx]   = n.fx;
+      F[2*idx+1] = n.fy;
+    });
+
+    const memberData = members.map(m => {
+      const ni = m.i - 1, nj = m.j - 1;
+      const x1 = nodes[ni].x, y1 = nodes[ni].y;
+      const x2 = nodes[nj].x, y2 = nodes[nj].y;
+      const dx = x2 - x1, dy = y2 - y1;
+      const L = Math.sqrt(dx*dx + dy*dy);
+      if (L === 0) throw new Error(`La barra ${m.i}-${m.j} tiene longitud cero.`);
+      const c = dx / L, s = dy / L;
+      const k = m.E * m.A / L;
+
+      // Matriz de rigidez local (base) y matriz Beta de transformación
+      const base = [[1,0,-1,0],[0,0,0,0],[-1,0,1,0],[0,0,0,0]];
+      const Beta = [[c,s,0,0],[-s,c,0,0],[0,0,c,s],[0,0,-s,c]];
+
+      // Kglobal = Beta^T * (k*base) * Beta
+      const kBase = base.map(row => row.map(v => v*k));
+      const BetaT = [[Beta[0][0],Beta[1][0],Beta[2][0],Beta[3][0]],
+                      [Beta[0][1],Beta[1][1],Beta[2][1],Beta[3][1]],
+                      [Beta[0][2],Beta[1][2],Beta[2][2],Beta[3][2]],
+                      [Beta[0][3],Beta[1][3],Beta[2][3],Beta[3][3]]];
+      const temp = matMul(BetaT, kBase);
+      const kGlobal = matMul(temp, Beta);
+
+      const dofs = [2*ni, 2*ni+1, 2*nj, 2*nj+1];
+      return { ni, nj, L, c, s, Beta, dofs, kGlobal };
+    });
+
+    // Ensamblaje
+    memberData.forEach(md => {
+      for (let a = 0; a < 4; a++){
+        for (let b = 0; b < 4; b++){
+          K[md.dofs[a]][md.dofs[b]] += md.kGlobal[a][b];
+        }
+      }
+    });
+
+    // DOF libres / restringidos
+    const restrained = new Array(nDOF).fill(false);
+    nodes.forEach((n, idx) => {
+      restrained[2*idx]   = !!n.rx;
+      restrained[2*idx+1] = !!n.ry;
+    });
+    const freeDofs = [];
+    const restrDofs = [];
+    for (let d = 0; d < nDOF; d++){
+      (restrained[d] ? restrDofs : freeDofs).push(d);
+    }
+    if (freeDofs.length === 0) throw new Error('No hay grados de libertad libres: revise las condiciones de apoyo.');
+
+    const Kff = freeDofs.map(r => freeDofs.map(c => K[r][c]));
+    const Ff = freeDofs.map(r => F[r]);
+
+    const uf = solveLinearSystem(Kff, Ff);
+
+    const U = new Array(nDOF).fill(0);
+    freeDofs.forEach((d, idx) => { U[d] = uf[idx]; });
+
+    // Reacciones = K*U - F, evaluadas en los DOF restringidos
+    const reactions = restrDofs.map(d => {
+      let val = 0;
+      for (let c = 0; c < nDOF; c++) val += K[d][c] * U[c];
+      return { dof: d, value: val - F[d] };
+    });
+
+    // Fuerzas axiales por barra
+    const forces = memberData.map((md, idx) => {
+      const Uelem = md.dofs.map(d => U[d]);
+      const uLocal = matVec(md.Beta, Uelem);
+      const m = members[idx];
+      const N = (m.E * m.A / md.L) * (uLocal[2] - uLocal[0]);
+      return { i:m.i, j:m.j, L:md.L, N };
+    });
+
+    return { U, reactions, forces };
+  }
+
+  function matMul(A, B){
+    const r = A.length, c = B[0].length, n = B.length;
+    const out = Array.from({length:r}, () => new Array(c).fill(0));
+    for (let x=0;x<r;x++) for (let y=0;y<c;y++){
+      let s=0;
+      for (let k=0;k<n;k++) s += A[x][k]*B[k][y];
+      out[x][y]=s;
+    }
+    return out;
+  }
+  function matVec(A, v){
+    return A.map(row => row.reduce((s,val,k) => s+val*v[k], 0));
+  }
+
+  // ---------------------------------------------------------------------
+  // Render de resultados
+  // ---------------------------------------------------------------------
+  function renderResults(result){
+    const tbDisp = document.querySelector('#tblDisp tbody');
+    tbDisp.innerHTML = '';
+    for (let i=0;i<nodes.length;i++){
+      const ux = result.U[2*i], uy = result.U[2*i+1];
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i+1}</td><td>${ux.toExponential(4)}</td><td>${uy.toExponential(4)}</td>`;
+      tbDisp.appendChild(tr);
+    }
+
+    const tbReac = document.querySelector('#tblReac tbody');
+    tbReac.innerHTML = '';
+    result.reactions.forEach(r => {
+      const node = Math.floor(r.dof/2)+1;
+      const dir = (r.dof % 2 === 0) ? 'X' : 'Y';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${node}</td><td>${dir}</td><td>${r.value.toFixed(4)}</td>`;
+      tbReac.appendChild(tr);
+    });
+
+    const tbForces = document.querySelector('#tblForces tbody');
+    tbForces.innerHTML = '';
+    result.forces.forEach((f, idx) => {
+      const estado = f.N > 1e-6 ? '<span class="badge-tension">Tensión</span>'
+                    : f.N < -1e-6 ? '<span class="badge-comp">Compresión</span>'
+                    : 'Sin carga';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${idx+1}</td><td>${f.i}</td><td>${f.j}</td><td>${f.L.toFixed(4)}</td><td>${f.N.toFixed(4)}</td><td>${estado}</td>`;
+      tbForces.appendChild(tr);
+    });
+
+    drawTruss(result);
+  }
+
+  // ---------------------------------------------------------------------
+  // Dibujo SVG de la estructura (geometría + color según tensión/compresión)
+  // ---------------------------------------------------------------------
+  function drawTruss(result){
+    const svg = document.getElementById('svgTruss');
+    svg.innerHTML = '';
+
+    const xs = nodes.map(n=>n.x), ys = nodes.map(n=>n.y);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const spanX = (maxX-minX) || 1, spanY = (maxY-minY) || 1;
+
+    const pad = 60;
+    const W = 900, H = 420;
+    const scale = Math.min((W-2*pad)/spanX, (H-2*pad)/spanY);
+
+    function toSvg(x,y){
+      const sx = pad + (x-minX)*scale;
+      const sy = H - pad - (y-minY)*scale;
+      return [sx,sy];
+    }
+
+    const ns = 'http://www.w3.org/2000/svg';
+
+    members.forEach((m, idx) => {
+      const [x1,y1] = toSvg(nodes[m.i-1].x, nodes[m.i-1].y);
+      const [x2,y2] = toSvg(nodes[m.j-1].x, nodes[m.j-1].y);
+      const line = document.createElementNS(ns,'line');
+      line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+      line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+      let color = '#999';
+      if (result){
+        const N = result.forces[idx].N;
+        color = N > 1e-6 ? '#7B1E3A' : (N < -1e-6 ? '#1F3864' : '#999');
+      }
+      line.setAttribute('stroke', color);
+      line.setAttribute('stroke-width', '3');
+      svg.appendChild(line);
+    });
+
+    nodes.forEach((n, idx) => {
+      const [sx,sy] = toSvg(n.x,n.y);
+      const circle = document.createElementNS(ns,'circle');
+      circle.setAttribute('cx',sx); circle.setAttribute('cy',sy);
+      circle.setAttribute('r','6');
+      circle.setAttribute('fill','#333');
+      svg.appendChild(circle);
+
+      const label = document.createElementNS(ns,'text');
+      label.setAttribute('x', sx+8);
+      label.setAttribute('y', sy-8);
+      label.setAttribute('font-size','11');
+      label.setAttribute('fill','#333');
+      label.textContent = idx+1;
+      svg.appendChild(label);
+
+      if (n.rx || n.ry){
+        const tri = document.createElementNS(ns,'polygon');
+        tri.setAttribute('points', `${sx-8},${sy+16} ${sx+8},${sy+16} ${sx},${sy+2}`);
+        tri.setAttribute('fill', '#1F3864');
+        svg.appendChild(tri);
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Eventos
+  // ---------------------------------------------------------------------
+  function showWarning(msg){
+    const box = document.getElementById('warnBox');
+    if (!msg){ box.style.display='none'; box.textContent=''; return; }
+    box.style.display='block';
+    box.textContent = msg;
+  }
+
+  function calculate(){
+    try{
+      readNodesFromDOM();
+      readMembersFromDOM();
+      const result = solveTruss(nodes, members);
+      showWarning(null);
+      renderResults(result);
+    } catch(err){
+      showWarning(err.message);
+    }
+  }
+
+  document.getElementById('btnAddNode').addEventListener('click', () => {
+    readNodesFromDOM(); readMembersFromDOM();
+    nodes.push({x:0,y:0,rx:false,ry:false,fx:0,fy:0});
+    renderNodesTable();
+  });
+
+  document.getElementById('btnAddMember').addEventListener('click', () => {
+    readNodesFromDOM(); readMembersFromDOM();
+    members.push({i:1, j: Math.min(2,nodes.length), E:E_EXAMPLE, A:A1});
+    renderMembersTable();
+  });
+
+  document.querySelector('#tblNodes').addEventListener('click', (e) => {
+    if (e.target.dataset.removeNode !== undefined){
+      readNodesFromDOM(); readMembersFromDOM();
+      const idx = +e.target.dataset.removeNode;
+      nodes.splice(idx,1);
+      renderNodesTable();
+    }
+  });
+
+  document.querySelector('#tblMembers').addEventListener('click', (e) => {
+    if (e.target.dataset.removeMember !== undefined){
+      readNodesFromDOM(); readMembersFromDOM();
+      const idx = +e.target.dataset.removeMember;
+      members.splice(idx,1);
+      renderMembersTable();
+    }
+  });
+
+  document.getElementById('btnCalc').addEventListener('click', calculate);
+
+  document.getElementById('btnReset').addEventListener('click', () => {
+    cloneExample();
+    renderNodesTable();
+    renderMembersTable();
+    showWarning(null);
+    drawTruss(null);
+  });
+
+  // Inicialización
+  cloneExample();
+  renderNodesTable();
+  renderMembersTable();
+  drawTruss(null);
+
+})();
+</script>
+
+</body>
+</html>
